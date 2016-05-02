@@ -23,8 +23,18 @@ class ConfigWidget final : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ConfigWidget(QWidget *parent = 0);
+    explicit ConfigWidget(QWidget *parent = 0, QStringList &dirs = *(QStringList*)0);
     ~ConfigWidget();
     Ui::ConfigWidget ui;
+
+    void add_clicked();
+    void del_clicked();
+
+signals:
+    void dirsChanged(const QStringList&);
+
+private:
+    QStringList dirs_;
+
 };
 }

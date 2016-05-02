@@ -15,15 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QDebug>
+#include <QFile>
+#include <QStandardPaths>
+#include <QSettings>
 #include "extension.h"
 #include "configwidget.h"
-#include "item.h"
+//#include "item.h"
 #include "query.h"
+#include "xdgiconlookup.h"
+#include "objects.hpp"
 
 /** ***************************************************************************/
-SSH::Extension::Extension() : IExtension("Template") {
+SSH::Extension::Extension() : IExtension("SSH") {
     qDebug("[%s] Initialize extension", name_);
     // Do sth.
+
+    iconPath_ = XdgIconLookup::instance()->themeIconPath("utilities-terminal.png", QIcon::themeName());
+
+    load();
+
+    buildIndex();
+
     qDebug("[%s] Extension initialized", name_);
 }
 
@@ -41,7 +53,8 @@ SSH::Extension::~Extension() {
 /** ***************************************************************************/
 QWidget *SSH::Extension::widget(QWidget *parent) {
     if (widget_.isNull()) {
-        widget_ = new ConfigWidget(parent);
+        widget_ = new ConfigWidget(parent, files_);
+        connect(widget_, &ConfigWidget::dirsChanged, this, &Extension::rebuildIndex);
     }
     return widget_;
 }
@@ -64,8 +77,25 @@ void SSH::Extension::teardownSession() {
 
 /** ***************************************************************************/
 void SSH::Extension::handleQuery(shared_ptr<Query> query) {
-    // Avoid annoying warnings
-    Q_UNUSED(query)
+
+    QStringList arguments  = query->originalSearchTerm().split(' ', QString::SkipEmptyParts);
+
+    if (arguments.size() < 2)
+        return;
+
+    arguments.takeFirst();
+
+    QString hostIdentifier = arguments.takeFirst();
+    for (QRegExp rx : availableSshConnections_) {
+        if (rx.indexIn(hostIdentifier) == 0) {
+            std::shared_ptr<StandardItem> result = std::make_shared<StandardItem>();
+            result->setText("Start SSH Session");
+            result->setSubtext(hostIdentifier);
+            result->setAction([](){qDebug("SSH TRIGGERED!");});
+            result->setIcon(iconPath_);
+            query->addMatch(result);
+        }
+    }
 }
 
 
@@ -74,4 +104,108 @@ void SSH::Extension::handleQuery(shared_ptr<Query> query) {
 void SSH::Extension::handleFallbackQuery(shared_ptr<Query> query) {
     // Avoid annoying warnings
     Q_UNUSED(query)
+}
+
+void SSH::Extension::load()
+{
+    QFile saveFile(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/org.albert.extension.ssh.dat");
+    if (saveFile.open(QFile::ReadOnly)) {
+        files_.clear();
+        QTextStream in(&saveFile);
+
+        QString line;
+        while (!in.atEnd()) {
+            line = in.readLine();
+            files_.append(line);
+        }
+
+        saveFile.close();
+    } else {
+        qCritical("[%s] Could not read file list!", name_);
+    }
+}
+
+void SSH::Extension::save()
+{
+    QFile saveFile(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/org.albert.extension.ssh.dat");
+    if (saveFile.open(QFile::WriteOnly)) {
+        QTextStream out(&saveFile);
+
+        for (QString& file: files_) {
+            out << file << "\n";
+        }
+
+        saveFile.close();
+        qDebug("[%s] Saved!", name_);
+    } else {
+        qCritical("[%s] Could not write file list!", name_);
+    }
+}
+
+void SSH::Extension::rebuildIndex(const QStringList &list)
+{
+    files_.clear();
+    files_ += list;
+    save();
+    buildIndex();
+}
+
+void SSH::Extension::buildIndex()
+{
+    qDebug("[%s] Reading configuration files", name_);
+    QString sshConfigFileName = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh/config");
+    if (!sshConfigFileName.isNull() && !sshConfigFileName.isEmpty()) {
+        readSshConfigFile(sshConfigFileName);
+    }
+
+    QString etcFile("/etc/ssh/ssh_config");
+    if (QFile::exists(etcFile)) {
+        readSshConfigFile(etcFile);
+    }
+
+    for (QString& file: files_)
+        if (QFile::exists(file))
+            readSshConfigFile(file);
+}
+
+void SSH::Extension::readSshConfigFile(QString &filepath)
+{
+    QFile sshConfigFile(filepath);
+    if (sshConfigFile.open(QFile::ReadOnly)) {
+        // Trying to parse .ssh/config
+
+        QTextStream reader(&sshConfigFile);
+        QString line, work;
+        while (!reader.atEnd()) {
+            line = reader.readLine().trimmed();
+
+            if (line.startsWith("#"))
+                continue;
+
+            // Keep this space here            ↓
+            // It prevents a HostName line to  ↓
+            // be recognized as Host line      ↓
+            if (line.toLower().startsWith("host ")) {
+                // Host line discovered
+                work = line.right(line.length() - line.indexOf(' ') -1).trimmed();
+                if (work.isEmpty())
+                    continue;
+                if (work.contains('?')) {
+                    work.replace('?', "[A-Za-z0-9]{1}");
+                }
+                if (work.contains('*') && work.length() > 1) {
+                    work.replace('*', "[A-Za-z0-9]*");
+                }
+                if (work.contains('.')) {
+                    work.replace('.', "\\.");
+                }
+                availableSshConnections_.append(QRegExp(work + "$"));
+                qDebug("[%s] Found: %s", name_, work.toStdString().c_str());
+            }
+
+        }
+
+    } else {
+        qWarning("Failed to open config file for read operation: %s", filepath.toStdString().c_str());
+    }
 }

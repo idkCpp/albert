@@ -17,6 +17,7 @@
 #pragma once
 #include <QObject>
 #include <QPointer>
+#include <QSettings>
 #include "iextension.h"
 
 namespace SSH {
@@ -42,12 +43,25 @@ public:
     void teardownSession() override;
     void handleQuery(shared_ptr<Query> query) override;
     void handleFallbackQuery(shared_ptr<Query>) override;
+    QStringList triggers() const override {return {"ssh"};}
 
     /*
      * Extension specific members
      */
+    void load();
+    void save();
+
+public slots:
+    void rebuildIndex(const QStringList &list);
 
 private:
+    static QSettings settings_;
     QPointer<ConfigWidget> widget_;
+    QString iconPath_;
+    QList<QRegExp> availableSshConnections_;
+    QStringList files_;
+
+    void buildIndex();
+    void readSshConfigFile(QString& filepath);
 };
 }

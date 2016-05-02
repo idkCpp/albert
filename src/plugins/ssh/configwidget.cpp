@@ -15,10 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "configwidget.h"
+#include <QListWidget>
+#include <QFileDialog>
+#include <QStandardPaths>
+#include <QSettings>
+#include "extension.h"
 
 /** ***************************************************************************/
-SSH::ConfigWidget::ConfigWidget(QWidget *parent) : QWidget(parent) {
+SSH::ConfigWidget::ConfigWidget(QWidget *parent, QStringList& dirs) : QWidget(parent) {
     ui.setupUi(this);
+
+    if (!dirs.isEmpty()) {
+        dirs_ = dirs;
+        ui.listWidget->addItems(dirs);
+    }
+
+    connect(ui.add_btn, &QPushButton::clicked, this, &ConfigWidget::add_clicked);
+    connect(ui.del_btn, &QPushButton::clicked, this, &ConfigWidget::del_clicked);
 }
 
 
@@ -26,4 +39,36 @@ SSH::ConfigWidget::ConfigWidget(QWidget *parent) : QWidget(parent) {
 /** ***************************************************************************/
 SSH::ConfigWidget::~ConfigWidget() {
 
+}
+
+void SSH::ConfigWidget::add_clicked()
+{
+    QStringList path = QFileDialog::getOpenFileNames(
+                this,
+                tr("Choose path"),
+                QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
+
+    if(path.isEmpty())
+        return;
+
+    dirs_ += path;
+    dirs_.removeDuplicates();
+
+    ui.listWidget->clear();
+    ui.listWidget->addItems(dirs_);
+
+    emit dirsChanged(dirs_);
+}
+
+void SSH::ConfigWidget::del_clicked()
+{
+    QListWidget* widget = ui.listWidget;
+    QList<QListWidgetItem *> selected = widget->selectedItems();
+    for (QListWidgetItem* item : selected)
+        dirs_.removeOne(item->text());
+
+    ui.listWidget->clear();
+    ui.listWidget->addItems(dirs_);
+
+    emit dirsChanged(dirs_);
 }
