@@ -109,6 +109,14 @@ void SSH::Extension::handleFallbackQuery(shared_ptr<Query> query) {
 void SSH::Extension::load()
 {
     QFile saveFile(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/org.albert.extension.ssh.dat");
+
+    // Default values
+    if (!saveFile.exists()) {
+        files_.append("/etc/ssh/ssh_config");
+        files_.append(QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh/config"));
+        return;
+    }
+
     if (saveFile.open(QFile::ReadOnly)) {
         files_.clear();
         QTextStream in(&saveFile);
@@ -153,6 +161,7 @@ void SSH::Extension::rebuildIndex(const QStringList &list)
 void SSH::Extension::buildIndex()
 {
     qDebug("[%s] Reading configuration files", name_);
+    /* Already handled by default values
     QString sshConfigFileName = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh/config");
     if (!sshConfigFileName.isNull() && !sshConfigFileName.isEmpty()) {
         readSshConfigFile(sshConfigFileName);
@@ -161,7 +170,7 @@ void SSH::Extension::buildIndex()
     QString etcFile("/etc/ssh/ssh_config");
     if (QFile::exists(etcFile)) {
         readSshConfigFile(etcFile);
-    }
+    }*/
 
     for (QString& file: files_)
         if (QFile::exists(file))
