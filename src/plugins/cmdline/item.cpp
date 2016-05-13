@@ -1,5 +1,5 @@
-// albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// albert extension cmdline - a cmdline launcher for albert
+// Copyright (C) 2016 Martin Bürgmann
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
