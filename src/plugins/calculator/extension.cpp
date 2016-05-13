@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2014-2016 Manuel Schneider
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ QWidget *Calculator::Extension::widget(QWidget *parent) {
 
 /** ***************************************************************************/
 void Calculator::Extension::handleQuery(shared_ptr<Query> query) {
-    parser_->SetExpr(query->searchTerm().toStdString());
+    parser_->SetExpr(query->searchTerm().toLower().toStdString());
     QString result;
     try {
         result = loc_.toString(parser_->Eval(), 'G', 16);

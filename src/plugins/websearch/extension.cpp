@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2014-2016 Manuel Schneider
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ QWidget *Websearch::Extension:: widget(QWidget *parent) {
 /** ***************************************************************************/
 void Websearch::Extension::handleQuery(shared_ptr<Query> query) {
     for (const shared_ptr<SearchEngine> &se : index_)
-        if (query->searchTerm().section(' ',0,0) == se->trigger()) {
+        if (query->searchTerm().toLower().section(' ',0,0) == se->trigger()) {
             se->setQuery(query->searchTerm().section(' ', 1, -1, QString::SectionSkipEmpty));
             query->addMatch(se);
         }

@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2014-2016 Manuel Schneider
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 /** ***************************************************************************/
 void ExtensionManager::startQuery(const QString &searchTerm) {
     // Trim spaces
-    QString trimmedTerm = searchTerm.trimmed().toLower();
+    QString trimmedTerm = searchTerm.trimmed();
 
     // Ignore empty queries
     if (trimmedTerm.isEmpty()){

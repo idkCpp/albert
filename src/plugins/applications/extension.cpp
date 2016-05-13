@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2014-2016 Manuel Schneider
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ QWidget *Applications::Extension::widget(QWidget *parent) {
 void Applications::Extension::handleQuery(shared_ptr<Query> query) {
     // Search for matches. Lock memory against scanworker
     indexAccess_.lock();
-    vector<shared_ptr<IIndexable>> indexables = offlineIndex_.search(query->searchTerm());
+    vector<shared_ptr<IIndexable>> indexables = offlineIndex_.search(query->searchTerm().toLower());
     indexAccess_.unlock();
 
     // Add results to query. This cast is safe since index holds files only
