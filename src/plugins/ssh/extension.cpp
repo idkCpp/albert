@@ -70,7 +70,7 @@ QWidget *SSH::Extension::widget(QWidget *parent) {
 /** ***************************************************************************/
 void SSH::Extension::handleQuery(shared_ptr<Query> query) {
 
-    QStringList arguments  = query->originalSearchTerm().split(' ', QString::SkipEmptyParts);
+    QStringList arguments  = query->searchTerm().split(' ', QString::SkipEmptyParts);
 
     if (arguments.size() < 2)
         return;
