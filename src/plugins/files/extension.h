@@ -23,6 +23,7 @@
 #include <vector>
 #include "iextension.h"
 #include "offlineindex.h"
+#include "autoconf.h"
 
 namespace Files {
 
@@ -94,6 +95,7 @@ private:
     QPointer<Indexer> indexer_;
     QTimer minuteTimer_;
     unsigned int minuteCounter_;
+    AUTOCONF_MEMBER
 
     // Index Properties
     QStringList rootDirs_;

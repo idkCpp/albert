@@ -154,6 +154,8 @@ QWidget *Files::Extension::widget(QWidget *parent) {
     if (widget_.isNull()) {
         widget_ = new ConfigWidget(parent);
 
+        AUTOCONF_SETUP(widget_);
+
         // Paths
         widget_->ui.listWidget_paths->addItems(rootDirs_);
         connect(this, &Extension::rootDirsChanged, widget_->ui.listWidget_paths, &QListWidget::clear);
@@ -164,26 +166,13 @@ QWidget *Files::Extension::widget(QWidget *parent) {
         connect(widget_->ui.pushButton_update, &QPushButton::clicked, this, &Extension::updateIndex, Qt::QueuedConnection);
 
         // Checkboxes
-        widget_->ui.checkBox_audio->setChecked(indexAudio());
-        connect(widget_->ui.checkBox_audio, &QCheckBox::toggled, this, &Extension::setIndexAudio);
-
-        widget_->ui.checkBox_video->setChecked(indexVideo());
-        connect(widget_->ui.checkBox_video, &QCheckBox::toggled, this, &Extension::setIndexVideo);
-
-        widget_->ui.checkBox_image->setChecked(indexImage());
-        connect(widget_->ui.checkBox_image, &QCheckBox::toggled, this, &Extension::setIndexImage);
-
-        widget_->ui.checkBox_docs->setChecked(indexDocs());
-        connect(widget_->ui.checkBox_docs, &QCheckBox::toggled, this, &Extension::setIndexDocs);
-
-        widget_->ui.checkBox_dirs->setChecked(indexDirs());
-        connect(widget_->ui.checkBox_dirs, &QCheckBox::toggled, this, &Extension::setIndexDirs);
-
-        widget_->ui.checkBox_hidden->setChecked(indexHidden());
-        connect(widget_->ui.checkBox_hidden, &QCheckBox::toggled, this, &Extension::setIndexHidden);
-
-        widget_->ui.checkBox_followSymlinks->setChecked(followSymlinks());
-        connect(widget_->ui.checkBox_followSymlinks, &QCheckBox::toggled, this, &Extension::setFollowSymlinks);
+        AUTOCONF(widget_->ui.checkBox_audio, CFG_INDEX_AUDIO, indexAudio_, indexAudio());
+        AUTOCONF(widget_->ui.checkBox_video, CFG_INDEX_VIDEO, indexVideo_, indexVideo());
+        AUTOCONF(widget_->ui.checkBox_image, CFG_INDEX_IMAGE, indexImage_, indexImage());
+        AUTOCONF(widget_->ui.checkBox_docs, CFG_INDEX_DOC, indexDocs_, indexDocs());
+        AUTOCONF(widget_->ui.checkBox_dirs, CFG_INDEX_DIR, indexDirs_, indexDirs());
+        AUTOCONF(widget_->ui.checkBox_hidden, CFG_INDEX_HIDDEN, indexHidden_, indexHidden());
+        AUTOCONF(widget_->ui.checkBox_followSymlinks, CFG_FOLLOW_SYMLINKS, followSymlinks_, followSymlinks());
 
         widget_->ui.checkBox_fuzzy->setChecked(fuzzy());
         connect(widget_->ui.checkBox_fuzzy, &QCheckBox::toggled, this, &Extension::setFuzzy);
@@ -206,6 +195,7 @@ QWidget *Files::Extension::widget(QWidget *parent) {
 
 /** ***************************************************************************/
 void Files::Extension::handleQuery(shared_ptr<Query> query) {
+    qDebug() << "Index Audio?" << indexAudio_;
 
     // Skip  short terms since they pollute the output
     if ( query->searchTerm().size() < 3)
