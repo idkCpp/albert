@@ -86,7 +86,7 @@ System::Extension::Extension() : IExtension("System") {
 QWidget *System::Extension::widget(QWidget *parent) {
     if (widget_.isNull()) {
         widget_ = new ConfigWidget(parent);
-/*
+
         // Initialize the content and connect the signals
         AUTOCONF_SETUP(widget_);
 
@@ -96,7 +96,7 @@ QWidget *System::Extension::widget(QWidget *parent) {
         AUTOCONF(widget_->ui.lineEdit_hibernate, configNames[HIBERNATE], commands[HIBERNATE], commands[HIBERNATE]);
         AUTOCONF(widget_->ui.lineEdit_reboot,    configNames[REBOOT],    commands[REBOOT],    commands[REBOOT]);
         AUTOCONF(widget_->ui.lineEdit_shutdown,  configNames[POWEROFF],  commands[POWEROFF],  commands[POWEROFF]);
-*/
+
     }
     return widget_;
 }
