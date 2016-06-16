@@ -19,6 +19,7 @@
 #include <QPointer>
 #include <vector>
 #include "iextension.h"
+#include "autoconf.h"
 using std::vector;
 
 class StandardItem;
@@ -51,5 +52,6 @@ private:
     QPointer<ConfigWidget> widget_;
     vector<QString> iconPaths;
     vector<QString> commands;
+    AUTOCONF_MEMBER
 };
 }

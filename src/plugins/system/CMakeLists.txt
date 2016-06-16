@@ -25,7 +25,7 @@ qt5_add_resources(QRC
 
 add_library(${PROJECT_NAME} SHARED ${SRC} ${UI} ${QRC})
 
-target_link_libraries(${PROJECT_NAME} ${Qt5Widgets_LIBRARIES} iconlookup)
+target_link_libraries(${PROJECT_NAME} ${Qt5Widgets_LIBRARIES} iconlookup autoconf)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION share/albert/plugins)

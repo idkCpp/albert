@@ -85,50 +85,17 @@ System::Extension::Extension() : IExtension("System") {
 QWidget *System::Extension::widget(QWidget *parent) {
     if (widget_.isNull()) {
         widget_ = new ConfigWidget(parent);
-
+/*
         // Initialize the content and connect the signals
+        AUTOCONF_SETUP(widget_);
 
-        widget_->ui.lineEdit_lock->setText(commands[LOCK]);
-        connect(widget_->ui.lineEdit_lock, &QLineEdit::textEdited,
-                [this](const QString &s){
-            commands[LOCK]= s;
-            qApp->settings()->setValue(QString("%1/%2").arg(name_, configNames[LOCK]), s);
-        });
-
-        widget_->ui.lineEdit_logout->setText(commands[LOGOUT]);
-        connect(widget_->ui.lineEdit_logout, &QLineEdit::textEdited,
-                [this](const QString &s){
-            commands[LOGOUT]= s;
-            qApp->settings()->setValue(QString("%1/%2").arg(name_, configNames[LOGOUT]), s);
-        });
-
-        widget_->ui.lineEdit_suspend->setText(commands[SUSPEND]);
-        connect(widget_->ui.lineEdit_suspend, &QLineEdit::textEdited,
-                [this](const QString &s){
-            commands[SUSPEND]= s;
-            qApp->settings()->setValue(QString("%1/%2").arg(name_, configNames[SUSPEND]), s);
-        });
-
-        widget_->ui.lineEdit_hibernate->setText(commands[HIBERNATE]);
-        connect(widget_->ui.lineEdit_hibernate, &QLineEdit::textEdited,
-                [this](const QString &s){
-            commands[HIBERNATE]= s;
-            qApp->settings()->setValue(QString("%1/%2").arg(name_, configNames[HIBERNATE]), s);
-        });
-
-        widget_->ui.lineEdit_reboot->setText(commands[REBOOT]);
-        connect(widget_->ui.lineEdit_reboot, &QLineEdit::textEdited,
-                [this](const QString &s){
-            commands[REBOOT]= s;
-            qApp->settings()->setValue(QString("%1/%2").arg(name_, configNames[REBOOT]), s);
-        });
-
-        widget_->ui.lineEdit_shutdown->setText(commands[POWEROFF]);
-        connect(widget_->ui.lineEdit_shutdown, &QLineEdit::textEdited,
-                [this](const QString &s){
-            commands[POWEROFF]= s;
-            qApp->settings()->setValue(QString("%1/%2").arg(name_, configNames[POWEROFF]), s);
-        });
+        AUTOCONF(widget_->ui.lineEdit_lock,      configNames[LOCK],      commands[LOCK],      commands[LOCK]);
+        AUTOCONF(widget_->ui.lineEdit_logout,    configNames[LOGOUT],    commands[LOGOUT],    commands[LOGOUT]);
+        AUTOCONF(widget_->ui.lineEdit_suspend,   configNames[SUSPEND],   commands[SUSPEND],   commands[SUSPEND]);
+        AUTOCONF(widget_->ui.lineEdit_hibernate, configNames[HIBERNATE], commands[HIBERNATE], commands[HIBERNATE]);
+        AUTOCONF(widget_->ui.lineEdit_reboot,    configNames[REBOOT],    commands[REBOOT],    commands[REBOOT]);
+        AUTOCONF(widget_->ui.lineEdit_shutdown,  configNames[POWEROFF],  commands[POWEROFF],  commands[POWEROFF]);
+*/
     }
     return widget_;
 }
