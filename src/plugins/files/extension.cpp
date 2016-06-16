@@ -197,7 +197,6 @@ QWidget *Files::Extension::widget(QWidget *parent) {
 
 /** ***************************************************************************/
 void Files::Extension::handleQuery(shared_ptr<Query> query) {
-    qDebug() << "Index Audio?" << indexAudio_;
 
     // Skip  short terms since they pollute the output
     if ( query->searchTerm().size() < 3)
