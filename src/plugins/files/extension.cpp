@@ -173,7 +173,8 @@ QWidget *Files::Extension::widget(QWidget *parent) {
         AUTOCONF(widget_->ui.checkBox_hidden, CFG_INDEX_HIDDEN, indexHidden_, indexHidden());
         AUTOCONF(widget_->ui.checkBox_followSymlinks, CFG_FOLLOW_SYMLINKS, followSymlinks_, followSymlinks());
 
-        widget_->ui.checkBox_fuzzy->setChecked(fuzzy());
+        //widget_->ui.checkBox_fuzzy->setChecked(fuzzy());
+        AUTOCONF(widget_->ui.checkBox_fuzzy, CFG_FUZZY, configurator->voidBool, fuzzy());
         connect(widget_->ui.checkBox_fuzzy, &QCheckBox::toggled, this, &Extension::setFuzzy);
 
         widget_->ui.spinBox_interval->setValue(scanInterval());

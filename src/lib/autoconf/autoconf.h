@@ -40,6 +40,12 @@ public:
     void registerUIItem(QSpinBox *, const char *key, uint &storage, uint initialValue = 0);
     void registerUIItem(QSpinBox *, QString key, uint &storage, uint initialValue = 0);
 
+    QString voidString;
+    QStringList voidStringList;
+    bool voidBool;
+    int voidInt;
+    uint voidUInt;
+
 public slots:
     void destroyed(QObject *toDestroy);
 
