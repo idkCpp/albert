@@ -1,3 +1,18 @@
+// Qt Config-Widgets Automatic Configuration Updater and Util
+// Copyright (C) 2016 Martin Buergmann
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
@@ -17,12 +32,18 @@ class Listener : public QObject {
     Q_OBJECT
 
 public:
+
+    // These void-variables are used to initialize references that are unused
+    // This is required because C++ does not allow uninitialized references
     QString voidString;
     QStringList voidStringList;
     bool voidBool;
     int voidInt;
     uint voidUInt;
 
+
+
+    /** ***********************************************************************/
     Listener(QObject *parent, QLineEdit *item, QString &configGroup, QString &key, QString &storage) :
             QObject(parent),
             type_(TYPE_LINEEDIT),
@@ -36,6 +57,10 @@ public:
         settings_.beginGroup(configGroup);
         connect(item, SIGNAL(textChanged(QString)), this, SLOT(lineEdit(QString)));
     }
+
+
+
+    /** ***********************************************************************/
     Listener(QObject *parent, QListWidget *item, QString &configGroup, QString &key, QStringList &storage) :
             QObject(parent),
             type_(TYPE_LISTWIDGET),
@@ -49,6 +74,10 @@ public:
         settings_.beginGroup(configGroup);
         connect(item, SIGNAL(destroyed()), this, SLOT(listView()));
     }
+
+
+
+    /** ***********************************************************************/
     Listener(QObject *parent, QCheckBox *item, QString &configGroup, QString &key, bool &storage) :
             QObject(parent),
             type_(TYPE_CHECKBOX),
@@ -62,6 +91,10 @@ public:
         settings_.beginGroup(configGroup);
         connect(item, SIGNAL(toggled(bool)), this, SLOT(checkbox(bool)));
     }
+
+
+
+    /** ***********************************************************************/
     Listener(QObject *parent, QSpinBox *item, QString& configGroup, QString &key, int &storage) :
             QObject(parent),
             type_(TYPE_SPINBOX),
@@ -75,6 +108,10 @@ public:
         settings_.beginGroup(configGroup);
         connect(item, SIGNAL(valueChanged(int)), this, SLOT(spinbox(int)));
     }
+
+
+
+    /** ***********************************************************************/
     Listener(QObject *parent, QSpinBox *item, QString &configGroup, QString &key, uint &storage) :
             QObject(parent),
             type_(TYPE_SPINBOX),
@@ -89,31 +126,31 @@ public:
         connect(item, SIGNAL(valueChanged(int)), this, SLOT(spinbox(int)));
     }
 
+
+
+    /** ***********************************************************************/
     virtual ~Listener() {
-        /*switch (type_) {
-        case TYPE_CHECKBOX:
-            disconnect((QCheckBox*)obj_, SIGNAL(stateChanged(int)), this, SLOT(checkbox(int)));
-            break;
-        case TYPE_LISTWIDGET:
-            break;
-        case TYPE_LINEEDIT:
-            disconnect((QLineEdit*)obj_, SIGNAL(textChanged(QString)), this, SLOT(lineEdit(QString)));
-            break;
-        case TYPE_SPINBOX:
-            disconnect((QSpinBox*)obj_, SIGNAL(valueChanged(int)), this, SLOT(spinbox(int)));
-            break;
-        }*/
     }
+
+
+
+    /** ***********************************************************************/
     void* getObject() {
         return obj_;
     }
 
 public slots:
+
+    /** ***********************************************************************/
     void lineEdit(QString line) {
         stringStore_ = line;
         settings_.setValue(key_, line);
         settings_.sync();
     }
+
+
+
+    /** ***********************************************************************/
     void listView() {
         QListWidget* listWidget = (QListWidget*) obj_;
         stringListStore_.clear();
@@ -123,11 +160,19 @@ public slots:
         settings_.setValue(key_, stringListStore_);
         settings_.sync();
     }
+
+
+
+    /** ***********************************************************************/
     void checkbox(bool newState) {
         boolStore_ = newState;
         settings_.setValue(key_, newState);
         settings_.sync();
     }
+
+
+
+    /** ***********************************************************************/
     void spinbox(int content) {
         intStore_ = content;
         uintStore_ = content;
