@@ -46,5 +46,6 @@ public:
 
 private:
     QPointer<ConfigWidget> widget_;
+    QString issueTemplateText_;
 };
 }
