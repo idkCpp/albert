@@ -32,6 +32,7 @@ IssueCreator::Extension::Extension() : IExtension("Issue Creator") {
     findUnameProcess.start();
     findUnameProcess.waitForFinished();
     QByteArray findUnameRaw = findUnameProcess.readAllStandardOutput();
+    findUnameRaw.replace('\n','\0');
 
     issueTemplateText_ = "#### Environent \n"
             "**Operating system:** `%1`\n"
