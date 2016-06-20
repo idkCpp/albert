@@ -4,6 +4,6 @@
     "version" :         "1.0",
     "platform" :        "All",
     "group" :           "Extensions",
-    "author" :          "Manuel Schneider",
+    "author" :          "Martin Buergmann",
     "dependencies" :    ""
 }
