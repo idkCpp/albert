@@ -43,9 +43,12 @@ public:
     /*
      * Extension specific members
      */
+public slots:
+    void submitIssue();
 
 private:
     QPointer<ConfigWidget> widget_;
     QString issueTemplateText_;
+    bool hasCurl_;
 };
 }

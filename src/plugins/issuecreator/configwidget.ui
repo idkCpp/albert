@@ -12,6 +12,34 @@
   </property>
   <layout class="QVBoxLayout">
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLineEdit" name="usernameEdit">
+       <property name="placeholderText">
+        <string>GitHub Username</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="passwordEdit">
+       <property name="echoMode">
+        <enum>QLineEdit::Password</enum>
+       </property>
+       <property name="placeholderText">
+        <string>Password</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="titleEdit">
+     <property name="placeholderText">
+      <string>GitHub Issue Title</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPlainTextEdit" name="issueText">
      <property name="font">
       <font>
@@ -20,6 +48,13 @@
      </property>
      <property name="readOnly">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="submitBtn">
+     <property name="text">
+      <string>Submit GitHub Issue</string>
      </property>
     </widget>
    </item>
