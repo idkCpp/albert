@@ -30,9 +30,11 @@
 IssueCreator::Extension::Extension() : IExtension("Issue Creator") {
     qDebug("[%s] Initialize extension", name_);
 
+    // Determine if the system has cUrl installed
     QString curl = QStandardPaths::findExecutable("curl");
     hasCurl_ = !curl.isEmpty();
 
+    // Determine the OS/kernel version
     QProcess findUnameProcess(this);
     findUnameProcess.setProgram("uname");
     findUnameProcess.setArguments({ "-orv" });
@@ -41,6 +43,7 @@ IssueCreator::Extension::Extension() : IExtension("Issue Creator") {
     QByteArray findUnameRaw = findUnameProcess.readAllStandardOutput();
     findUnameRaw.replace('\n','\0');
 
+    // Produce template text
     issueTemplateText_ = "#### Environent \n"
             "**Operating system:** `%1`\n"
             "**Desktop environment:** `%2`\n"
@@ -57,8 +60,8 @@ IssueCreator::Extension::Extension() : IExtension("Issue Creator") {
             "#### Actual behaviour\n"
             "What happened instead?";
 
+    // with filled-in env-parameters
     issueTemplateText_ = issueTemplateText_.arg(findUnameRaw, qgetenv("XDG_CURRENT_DESKTOP"), qVersion(), qApp->applicationVersion());
-
 
     qDebug("[%s] Extension initialized", name_);
 }
@@ -67,8 +70,6 @@ IssueCreator::Extension::Extension() : IExtension("Issue Creator") {
 
 /** ***************************************************************************/
 IssueCreator::Extension::~Extension() {
-    qDebug("[%s] Finalize extension", name_);
-    // Do sth.
     qDebug("[%s] Extension finalized", name_);
 }
 
@@ -90,6 +91,7 @@ QWidget *IssueCreator::Extension::widget(QWidget *parent) {
             textEdit->setReadOnly(false);
             connect(submitBtn, SIGNAL(clicked()), this, SLOT(submitIssue()));
         } else {
+            // Disable controls if no cUrl is present on the system.
             submitBtn->setEnabled(false);
             submitBtn->setText("cUrl not found! Cannot send issues from here!");
             username->setEnabled(false);
