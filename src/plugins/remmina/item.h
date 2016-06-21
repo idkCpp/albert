@@ -29,6 +29,8 @@ public:
 
     Item* copy();
 
+    QString getName() { return name_; }
+
     QString text() const override;
     QString subtext() const override;
     QString iconPath() const override;

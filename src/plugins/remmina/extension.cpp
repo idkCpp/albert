@@ -112,7 +112,16 @@ void Remmina::Extension::handleQuery(shared_ptr<Query> query) {
         query->addMatch(std::shared_ptr<AlbertItem>(new StandardItem("No config entry found", "", XdgIconLookup::instance()->themeIconPath("dialog-error", QIcon::themeName()), [](){})));
         return;
     }
+    QStringList words = query->searchTerm().split(" ");
+    words.removeFirst();
+    QString searchPrefix;
+    bool matchAll = false;
+    if (words.isEmpty())
+        matchAll = true;
+    else
+        searchPrefix = words.join(" ").toLower();
     for (Item* item : availableItems_) {
-        query->addMatch(std::shared_ptr<AlbertItem>(item->copy()));
+        if (matchAll || item->getName().toLower().startsWith(searchPrefix))
+            query->addMatch(std::shared_ptr<AlbertItem>(item->copy()));
     }
 }
