@@ -51,5 +51,6 @@ public:
 private:
     QPointer<ConfigWidget> widget_;
     QList<Item*> availableItems_;
+    bool error_;
 };
 }

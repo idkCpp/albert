@@ -16,6 +16,7 @@
 
 #include "item.h"
 #include <QSettings>
+#include <QProcess>
 
 
 /** ***************************************************************************/
@@ -68,5 +69,6 @@ QString Remmina::Item::iconPath() const {
 /** ***************************************************************************/
 void Remmina::Item::activate(ExecutionFlags *) {
     // Do sth cool...
-    qDebug("Connecting to %s", name_.toStdString().c_str());
+    //qDebug("Connecting to %s", name_.toStdString().c_str());
+    QProcess::startDetached("remmina", {"-c", configFile_});
 }

@@ -18,6 +18,7 @@
 #include <QFile>
 #include <QDirIterator>
 #include <QSettings>
+#include <QStandardPaths>
 #include "extension.h"
 #include "configwidget.h"
 #include "item.h"
@@ -28,7 +29,12 @@
 /** ***************************************************************************/
 Remmina::Extension::Extension() : IExtension("Remmina") {
     qDebug("[%s] Initialize extension", name_);
-    // Do sth.
+
+    // Checking if remmina is detected
+    error_ = QStandardPaths::findExecutable("remmina").isEmpty();
+    if (error_)
+        qCritical("[%s] Remmina-executable not found!", name_);
+
     qDebug("[%s] Extension initialized", name_);
 }
 
@@ -55,10 +61,16 @@ QWidget *Remmina::Extension::widget(QWidget *parent) {
 
 /** ***************************************************************************/
 void Remmina::Extension::setupSession() {
+    // Don't need to read files if we have no exe
+    if (error_)
+        return;
+
+    // Delete the old ones first
     for (Item* item : availableItems_)
         delete item;
     availableItems_.clear();
 
+    // Iterate through the .remmina dir
     QDir remminaDir = QDir::home();
     remminaDir.cd(".remmina");
     QDirIterator it(remminaDir);
@@ -92,6 +104,10 @@ void Remmina::Extension::setupSession() {
 
 /** ***************************************************************************/
 void Remmina::Extension::handleQuery(shared_ptr<Query> query) {
+    if (error_) {
+        query->addMatch(std::shared_ptr<AlbertItem>(new StandardItem("The Remmina-executable was not found", "", XdgIconLookup::instance()->themeIconPath("dialog-error", QIcon::themeName()), [](){})));
+        return;
+    }
     if (availableItems_.size() == 0) {
         query->addMatch(std::shared_ptr<AlbertItem>(new StandardItem("No config entry found", "", XdgIconLookup::instance()->themeIconPath("dialog-error", QIcon::themeName()), [](){})));
         return;
