@@ -18,6 +18,8 @@
 #include <QFile>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QProcess>
+#include "albertapp.h"
 #include "extension.h"
 #include "configwidget.h"
 #include "query.h"
@@ -73,15 +75,18 @@ void SSH::Extension::handleQuery(shared_ptr<Query> query) {
     if (arguments.size() < 2)
         return;
 
-    arguments.takeFirst();
+    arguments.removeFirst();
 
-    QString hostIdentifier = arguments.takeFirst();
+    QString hostIdentifier = arguments.join(' ');
     for (QRegExp rx : availableSshConnections_) {
         if (rx.indexIn(hostIdentifier) == 0) {
             std::shared_ptr<StandardItem> result = std::make_shared<StandardItem>();
             result->setText("Start SSH Session");
             result->setSubtext(hostIdentifier);
-            result->setAction([](){qDebug("SSH TRIGGERED!");});
+            result->setAction([hostIdentifier](){
+                QString cmd("ssh %1");
+                QProcess::startDetached(qApp->term().arg(cmd.arg(hostIdentifier)));
+            });
             result->setIcon(iconPath_);
             query->addMatch(result);
         }
