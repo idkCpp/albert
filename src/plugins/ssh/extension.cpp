@@ -1,5 +1,5 @@
-// albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// albert extension ssh - open preconfigured ssh sessions from albert
+// Copyright (C) 2016 Martin Buergmann
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 #include <QSettings>
 #include "extension.h"
 #include "configwidget.h"
-//#include "item.h"
 #include "query.h"
 #include "xdgiconlookup.h"
 #include "objects.hpp"
@@ -28,7 +27,7 @@
 /** ***************************************************************************/
 SSH::Extension::Extension() : IExtension("SSH") {
     qDebug("[%s] Initialize extension", name_);
-    // Do sth.
+    // Do init
 
     iconPath_ = XdgIconLookup::instance()->themeIconPath("utilities-terminal.png", QIcon::themeName());
 
@@ -49,7 +48,7 @@ SSH::Extension::Extension() : IExtension("SSH") {
 /** ***************************************************************************/
 SSH::Extension::~Extension() {
     qDebug("[%s] Finalize extension", name_);
-    // Do sth.
+    // Don't need to delete rebuildTimer_ this is done by Qt
     qDebug("[%s] Extension finalized", name_);
 }
 
