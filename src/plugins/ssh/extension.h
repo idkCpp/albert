@@ -57,7 +57,7 @@ private:
     static QSettings settings_;
     QPointer<ConfigWidget> widget_;
     QString iconPath_;
-    QList<QRegExp> availableSshConnections_;
+    QList<QRegExp*> availableSshConnections_;
     QStringList files_;
     QTimer *rebuildTimer_;
 

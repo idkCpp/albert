@@ -78,8 +78,8 @@ void SSH::Extension::handleQuery(shared_ptr<Query> query) {
     arguments.removeFirst();
 
     QString hostIdentifier = arguments.join(' ');
-    for (QRegExp rx : availableSshConnections_) {
-        if (rx.indexIn(hostIdentifier) == 0) {
+    for (QRegExp *rx : availableSshConnections_) {
+        if (rx->indexIn(hostIdentifier) == 0) {
             std::shared_ptr<StandardItem> result = std::make_shared<StandardItem>();
             result->setText("Start SSH Session");
             result->setSubtext(hostIdentifier);
@@ -166,6 +166,8 @@ void SSH::Extension::buildIndex() {
     if (QFile::exists(etcFile)) {
         readSshConfigFile(etcFile);
     }*/
+    qDeleteAll(availableSshConnections_);
+    availableSshConnections_.clear();
 
     for (QString& file: files_)
         if (QFile::exists(file))
@@ -205,7 +207,7 @@ void SSH::Extension::readSshConfigFile(QString &filepath) {
                 if (work.contains('.')) {
                     work.replace('.', "\\.");
                 }
-                availableSshConnections_.append(QRegExp(work + "$"));
+                availableSshConnections_.append(new QRegExp(work + "$"));
                 qDebug("[%s] Found: %s", name_, work.toStdString().c_str());
             }
 
