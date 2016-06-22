@@ -36,6 +36,11 @@ SSH::Extension::Extension() : IExtension("SSH") {
 
     buildIndex();
 
+    rebuildTimer_ = new QTimer(this);
+    rebuildTimer_->setInterval(5 * 60 * 1000);
+    connect(rebuildTimer_, SIGNAL(timeout()), this, SLOT(buildIndex()));
+    rebuildTimer_->start();
+
     qDebug("[%s] Extension initialized", name_);
 }
 
@@ -57,20 +62,6 @@ QWidget *SSH::Extension::widget(QWidget *parent) {
         connect(widget_, &ConfigWidget::dirsChanged, this, &Extension::rebuildIndex);
     }
     return widget_;
-}
-
-
-
-/** ***************************************************************************/
-void SSH::Extension::setupSession() {
-
-}
-
-
-
-/** ***************************************************************************/
-void SSH::Extension::teardownSession() {
-
 }
 
 
@@ -101,13 +92,7 @@ void SSH::Extension::handleQuery(shared_ptr<Query> query) {
 
 
 /** ***************************************************************************/
-void SSH::Extension::handleFallbackQuery(shared_ptr<Query> query) {
-    // Avoid annoying warnings
-    Q_UNUSED(query)
-}
-
-void SSH::Extension::load()
-{
+void SSH::Extension::load() {
     QFile saveFile(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/org.albert.extension.ssh.dat");
 
     // Default values
@@ -133,8 +118,10 @@ void SSH::Extension::load()
     }
 }
 
-void SSH::Extension::save()
-{
+
+
+/** ***************************************************************************/
+void SSH::Extension::save() {
     QFile saveFile(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/org.albert.extension.ssh.dat");
     if (saveFile.open(QFile::WriteOnly)) {
         QTextStream out(&saveFile);
@@ -150,16 +137,20 @@ void SSH::Extension::save()
     }
 }
 
-void SSH::Extension::rebuildIndex(const QStringList &list)
-{
+
+
+/** ***************************************************************************/
+void SSH::Extension::rebuildIndex(const QStringList &list) {
     files_.clear();
     files_ += list;
     save();
     buildIndex();
 }
 
-void SSH::Extension::buildIndex()
-{
+
+
+/** ***************************************************************************/
+void SSH::Extension::buildIndex() {
     qDebug("[%s] Reading configuration files", name_);
     /* Already handled by default values
     QString sshConfigFileName = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh/config");
@@ -177,8 +168,10 @@ void SSH::Extension::buildIndex()
             readSshConfigFile(file);
 }
 
-void SSH::Extension::readSshConfigFile(QString &filepath)
-{
+
+
+/** ***************************************************************************/
+void SSH::Extension::readSshConfigFile(QString &filepath) {
     QFile sshConfigFile(filepath);
     if (sshConfigFile.open(QFile::ReadOnly)) {
         // Trying to parse .ssh/config

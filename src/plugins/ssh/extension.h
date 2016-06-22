@@ -18,6 +18,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QSettings>
+#include <QTimer>
 #include "iextension.h"
 
 namespace SSH {
@@ -39,10 +40,7 @@ public:
      */
 
     QWidget *widget(QWidget *parent = nullptr) override;
-    void setupSession() override;
-    void teardownSession() override;
     void handleQuery(shared_ptr<Query> query) override;
-    void handleFallbackQuery(shared_ptr<Query>) override;
     QStringList triggers() const override {return {"ssh"};}
 
     /*
@@ -53,6 +51,7 @@ public:
 
 public slots:
     void rebuildIndex(const QStringList &list);
+    void buildIndex();
 
 private:
     static QSettings settings_;
@@ -60,8 +59,8 @@ private:
     QString iconPath_;
     QList<QRegExp> availableSshConnections_;
     QStringList files_;
+    QTimer *rebuildTimer_;
 
-    void buildIndex();
     void readSshConfigFile(QString& filepath);
 };
 }
