@@ -79,7 +79,7 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
 
 
     /*
-     *  PARSE COMMANDLINE
+     *  SETUP PARSER FOR COMMANDLINE
      */
 
     QCommandLineParser parser;
@@ -97,6 +97,7 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     QCommandLineOption showOption = QCommandLineOption({"s", "show"}, "Brings the albert widget to front.");
     QCommandLineOption hideOption = QCommandLineOption({"i", "hide"}, "Hides the albert widget."); // "i" for invisible because "h" is already taken by the help option
     QCommandLineOption toggleOption = QCommandLineOption({"t", "toggle"}, "Brings the albert widget to front if its hidden, hides it otherwise.");
+    QString ipcOpts = "sitq";
 
     parser.addOption(configOption);
     parser.addOption(hotkeyOption);
@@ -105,6 +106,11 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     parser.addOption(hideOption);
     parser.addOption(toggleOption);
 
+
+    /*
+     *  PARSE
+     */
+
     parser.process(*this);
 
     const QStringList args = parser.positionalArguments();
@@ -112,84 +118,125 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
         qFatal(parser.helpText().toStdString().c_str());
     }
 
-    if ( parser.isSet(configOption) ) {
-        settings_ = new QSettings(parser.value(configOption));
-    } else {
-        settings_ = new QSettings;
+    bool settingsAlternateConfigFile = parser.isSet(configOption);
+    bool settingsChangeHotkey = parser.isSet(hotkeyOption);
+
+    bool ipcBringToFront = parser.isSet(showOption);
+    bool ipcHide = parser.isSet(hideOption);
+    bool ipcToggle = parser.isSet(toggleOption);
+    bool ipcQuit = parser.isSet(quitOption);
+    bool ipcReloadSettings = false;
+
+    bool anySettingsOpt = settingsAlternateConfigFile | settingsChangeHotkey;
+    bool anyIpcOpt = ipcBringToFront | ipcHide | ipcQuit | ipcToggle;
+
+
+    /*
+     *  CHECK FOR INCOMPATIBLE OPTIONS
+     */
+
+    if ( (ipcHide && ipcBringToFront) ||
+            (ipcHide && ipcToggle) ||
+            (ipcBringToFront && ipcToggle) ) {
+
+        QString err("Please specify only one of -%1");
+        err = err.arg(ipcOpts);
+        std::string stderrstr = err.toStdString();
+        qWarning(stderrstr.c_str());
+
+        // Clear all because we don't know what the user wants
+        ipcHide = false;
+        ipcToggle = false;
+        ipcBringToFront = false;
+        anyIpcOpt = ipcQuit;
     }
 
-    if ( parser.isSet(hotkeyOption) ) {
-        settings_->setValue("hotkey", parser.value(hotkeyOption));
+    if ((ipcHide || ipcBringToFront || ipcToggle) && ipcQuit) {
+        qWarning("Ignoring all of -sit");
+
+        // Clear all the show/hide/toggle opts because we want to --quit
+        ipcHide = false;
+        ipcToggle = false;
+        ipcBringToFront = false;
     }
 
 
     /*
-     *  SINGLE INSTANCE / IPC
+     *  CHECK FOR SINGLE INSTANCE / IPC
      */
 
     QLocalSocket socket;
     socket.connectToServer(applicationName());
-    if ( socket.waitForConnected(500) ) {
-        // If there is a command send it
-        const char BIT_PATTERN_SHOW = 0x01;
-        const char BIT_PATTERN_HIDE = 0x02;
-        const char BIT_PATTERN_TOGGLE = 0x04;
-        const char BIT_PATTERN_QUIT = 0x08;
-        const char BIT_PATTERN_HIDESHOW = BIT_PATTERN_HIDE | BIT_PATTERN_SHOW;
-        const char BIT_PATTERN_HIDESHOWTOGGLE = BIT_PATTERN_HIDESHOW | BIT_PATTERN_TOGGLE;
+    bool albertAlreadyRunning = socket.waitForConnected(500);
 
-        char cmdBitMask = 0;
-        if (parser.isSet(showOption))
-            cmdBitMask |= BIT_PATTERN_SHOW;
-        if (parser.isSet(hideOption))
-            cmdBitMask |= BIT_PATTERN_HIDE;
-        if (parser.isSet(toggleOption))
-            cmdBitMask |= BIT_PATTERN_TOGGLE;
-        if (parser.isSet(quitOption))
-            cmdBitMask |= BIT_PATTERN_QUIT;
+    if (anyIpcOpt && !albertAlreadyRunning) {
+        if (anySettingsOpt) {
+            QString err = "No albert program is running. -%1 options ignored!";
+            err = err.arg(ipcOpts);
+            std::string stderrstr = err.toStdString(); // Making this a local variable to give a specific scope in which the var exists
+            qWarning(stderrstr.c_str());
+
+            anyIpcOpt = false;
+        } else
+            qFatal("There is no albert instance running!");
+    }
+
+
+    /*
+     *  CARRY OUT SETTINGS MANIPULATION
+     */
+
+    if (anySettingsOpt) {
+        if (albertAlreadyRunning) {
+            qCritical("You are modifying settings while albert is running. This can lead to data loss!");
+            ipcReloadSettings = true;
+            anyIpcOpt = true;
+        }
+
+        if ( parser.isSet(configOption) ) {
+            settings_ = new QSettings(parser.value(configOption));
+        } else {
+            settings_ = new QSettings;
+        }
+        if ( parser.isSet(hotkeyOption) ) {
+            settings_->setValue("hotkey", parser.value(hotkeyOption));
+        }
+    } else
+        settings_ = new QSettings; // Have to make sure settings object is present even if no settings opt was given
+
+
+
+    if (anyIpcOpt) {
+        // If there is a command send it
 
         QString cmdToSend;
-        std::bitset<8> cmdBitSet(cmdBitMask);
-        if (cmdBitSet.count() > 1 && cmdBitMask != BIT_PATTERN_HIDESHOW && cmdBitMask != BIT_PATTERN_HIDESHOWTOGGLE)
-            qFatal("Only one of -sit can be specified");
-        else switch (cmdBitMask) {
-            case BIT_PATTERN_HIDE:
-                cmdToSend = "hide";
-                break;
-            case BIT_PATTERN_SHOW:
-                cmdToSend = "show";
-                break;
-            case BIT_PATTERN_HIDESHOW:
-            case BIT_PATTERN_HIDESHOWTOGGLE:
-            case BIT_PATTERN_TOGGLE:
-                cmdToSend = "toggle";
-                break;
-            case BIT_PATTERN_QUIT:
-                cmdToSend = "quit";
-                break;
-            case 0:
-                qWarning("Albert is already running");
-                qFatal("Please specify an option of -sitq");
-                break;
-            default:
-                qFatal("I have no idea how this should even happen. Let's go with D-RAM bitflip!");
-                break;
+
+        if (ipcHide)
+            cmdToSend = "hide";
+        if (ipcBringToFront)
+            cmdToSend = "show";
+        if (ipcToggle)
+            cmdToSend = "toggle";
+        if (ipcQuit)
+            cmdToSend = "quit";
+        if (ipcReloadSettings) {
+            if (parser.isSet(configOption))
+                cmdToSend = "reload " + parser.value(configOption);
+            else
+                cmdToSend = "reload";
         }
 
         if ( !cmdToSend.isEmpty() ){
             socket.write(cmdToSend.toLocal8Bit());
             socket.flush();
-            socket.waitForReadyRead(500);
-            if (socket.bytesAvailable())
-                qDebug() << socket.readAll();
+            while (socket.waitForReadyRead(500)) // In case multiple lines arrive (within half a sec)
+                if (socket.bytesAvailable())
+                    qDebug() << socket.readAll();
         }
-        else
-            qDebug("There is another instance of albert running.");
+        // else miracle();
+
         socket.close();
         ::exit(EXIT_SUCCESS);
-    } else if ( args.count() == 1 ) {
-        qDebug("There is no other instance of albert running.");
-        ::exit(EXIT_FAILURE);
     }
 
     // Start server so second instances will close
@@ -213,6 +260,29 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
             } else if ( msg == "quit" ) {
                 socket->write("Shutting down!");
                 quit();
+            } else if ( msg.startsWith("reload") ) {
+                socket->write("Attempting reload");
+                socket->flush();
+                bool fileChanged = false;
+                QString settingsFile;
+                if (msg.contains(" ")) {
+                    QStringList split = msg.split(" ");
+                    split.removeFirst();
+                    settingsFile = split.join(" "); // Join should not be needed but sure is sure. Who knows...
+                    fileChanged = true;
+                } else
+                    settingsFile = settings_->fileName();
+                delete extensionManager_;
+                delete pluginManager_;
+                if (fileChanged) {
+                    delete settings_;
+                    settings_ = new QSettings(settingsFile);
+                } else {
+                    settings_->sync();
+                }
+                pluginManager_ = new PluginManager;
+                extensionManager_ = new ExtensionManager;
+                socket->write("Reloaded!");
             } else
                 socket->write("Command not supported.");
         }
