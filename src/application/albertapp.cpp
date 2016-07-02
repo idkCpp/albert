@@ -88,12 +88,14 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     parser.addHelpOption();
     parser.addVersionOption();
 
+    QCommandLineOption quitOption = QCommandLineOption({"q", "quit"}, "Shuts albert down.");
     QCommandLineOption configOption = QCommandLineOption({"c", "config"}, "The config file to use.", "file");
     QCommandLineOption hotkeyOption = QCommandLineOption({"k", "hotkey"}, "Overwrite the hotkey to use.", "hotkey");
     QCommandLineOption showOption = QCommandLineOption({"s", "show"}, "Brings the albert widget to front.");
     QCommandLineOption hideOption = QCommandLineOption({"i", "hide"}, "Hides the albert widget."); // "i" for invisible because "h" is already taken by the help option
     QCommandLineOption toggleOption = QCommandLineOption({"t", "toggle"}, "Brings the albert widget to front if its hidden, hides it otherwise.");
 
+    parser.addOption(quitOption);
     parser.addOption(configOption);
     parser.addOption(hotkeyOption);
     parser.addOption(showOption);
@@ -130,8 +132,9 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
         const char BIT_PATTERN_SHOW = 0x01;
         const char BIT_PATTERN_HIDE = 0x02;
         const char BIT_PATTERN_TOGGLE = 0x04;
+        const char BIT_PATTERN_QUIT = 0x08;
         const char BIT_PATTERN_HIDESHOW = BIT_PATTERN_HIDE | BIT_PATTERN_SHOW;
-        const char BIT_PATTERN_ALL = BIT_PATTERN_HIDESHOW | BIT_PATTERN_TOGGLE;
+        const char BIT_PATTERN_HIDESHOWTOGGLE = BIT_PATTERN_HIDESHOW | BIT_PATTERN_TOGGLE;
 
         char cmdBitMask = 0;
         if (parser.isSet(showOption))
@@ -140,13 +143,13 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
             cmdBitMask |= BIT_PATTERN_HIDE;
         if (parser.isSet(toggleOption))
             cmdBitMask |= BIT_PATTERN_TOGGLE;
+        if (parser.isSet(quitOption))
+            cmdBitMask |= BIT_PATTERN_QUIT;
 
         QString cmdToSend;
         std::bitset<8> cmdBitSet(cmdBitMask);
-        if (cmdBitSet.count() > 1 && cmdBitMask != BIT_PATTERN_HIDESHOW && cmdBitMask != BIT_PATTERN_ALL)
+        if (cmdBitSet.count() > 1 && cmdBitMask != BIT_PATTERN_HIDESHOW && cmdBitMask != BIT_PATTERN_HIDESHOWTOGGLE)
             qFatal("Only one of -sit can be specified");
-        else if (cmdBitMask == BIT_PATTERN_HIDESHOW || cmdBitMask == BIT_PATTERN_ALL) // Accept it anyway if the user specified show and hide simultaneously or all 3 options, interpreting it as toggle
-            cmdToSend = "toggle";
         else switch (cmdBitMask) {
             case BIT_PATTERN_HIDE:
                 cmdToSend = "hide";
@@ -154,8 +157,17 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
             case BIT_PATTERN_SHOW:
                 cmdToSend = "show";
                 break;
+            case BIT_PATTERN_HIDESHOW:
+            case BIT_PATTERN_HIDESHOWTOGGLE:
             case BIT_PATTERN_TOGGLE:
                 cmdToSend = "toggle";
+                break;
+            case BIT_PATTERN_QUIT:
+                cmdToSend = "quit";
+                break;
+            case 0:
+                qWarning("Albert is already running");
+                qFatal("Please specify one of -sit");
                 break;
             default:
                 qFatal("I have no idea how this should even happen. Let's go with D-RAM bitflip!");
@@ -196,6 +208,9 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
             } else if ( msg == "toggle") {
                 mainWindow_->setVisible(!mainWindow_->isVisible());
                 socket->write("Visibility toggled.");
+            } else if ( msg == "quit" ) {
+                socket->write("Shutting down!");
+                quit();
             } else
                 socket->write("Command not supported.");
         }
