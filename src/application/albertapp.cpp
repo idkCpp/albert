@@ -88,16 +88,19 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     parser.addHelpOption();
     parser.addVersionOption();
 
-    QCommandLineOption quitOption = QCommandLineOption({"q", "quit"}, "Shuts albert down.");
+    // Config options
     QCommandLineOption configOption = QCommandLineOption({"c", "config"}, "The config file to use.", "file");
     QCommandLineOption hotkeyOption = QCommandLineOption({"k", "hotkey"}, "Overwrite the hotkey to use.", "hotkey");
+
+    // IPC options
+    QCommandLineOption quitOption = QCommandLineOption({"q", "quit"}, "Shuts albert down.");
     QCommandLineOption showOption = QCommandLineOption({"s", "show"}, "Brings the albert widget to front.");
     QCommandLineOption hideOption = QCommandLineOption({"i", "hide"}, "Hides the albert widget."); // "i" for invisible because "h" is already taken by the help option
     QCommandLineOption toggleOption = QCommandLineOption({"t", "toggle"}, "Brings the albert widget to front if its hidden, hides it otherwise.");
 
-    parser.addOption(quitOption);
     parser.addOption(configOption);
     parser.addOption(hotkeyOption);
+    parser.addOption(quitOption);
     parser.addOption(showOption);
     parser.addOption(hideOption);
     parser.addOption(toggleOption);
@@ -108,7 +111,6 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     if ( args.count() > 0) {
         qFatal(parser.helpText().toStdString().c_str());
     }
-//        qFatal("Invalid amount of arguments");
 
     if ( parser.isSet(configOption) ) {
         settings_ = new QSettings(parser.value(configOption));
@@ -167,7 +169,7 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
                 break;
             case 0:
                 qWarning("Albert is already running");
-                qFatal("Please specify one of -sit");
+                qFatal("Please specify an option of -sitq");
                 break;
             default:
                 qFatal("I have no idea how this should even happen. Let's go with D-RAM bitflip!");
