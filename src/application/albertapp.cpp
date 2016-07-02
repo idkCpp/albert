@@ -20,6 +20,7 @@
 #include <QCommandLineParser>
 #include <QDebug>
 #include <csignal>
+#include <bitset>
 #include "albertapp.h"
 #include "mainwindow.h"
 #include "settingswidget.h"
@@ -86,23 +87,35 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
                                      "may change in future versions.");
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addOption(QCommandLineOption({"c", "config"}, "The config file to use.", "file"));
-    parser.addOption(QCommandLineOption({"k", "hotkey"}, "Overwrite the hotkey to use.", "hotkey"));
-    parser.addPositionalArgument("command", "Command to send to a running instance, if any. (show, hide, toggle)", "[command]");
+
+    QCommandLineOption configOption = QCommandLineOption({"c", "config"}, "The config file to use.", "file");
+    QCommandLineOption hotkeyOption = QCommandLineOption({"k", "hotkey"}, "Overwrite the hotkey to use.", "hotkey");
+    QCommandLineOption showOption = QCommandLineOption({"s", "show"}, "Brings the albert widget to front.");
+    QCommandLineOption hideOption = QCommandLineOption({"i", "hide"}, "Hides the albert widget."); // "i" for invisible because "h" is already taken by the help option
+    QCommandLineOption toggleOption = QCommandLineOption({"t", "toggle"}, "Brings the albert widget to front if its hidden, hides it otherwise.");
+
+    parser.addOption(configOption);
+    parser.addOption(hotkeyOption);
+    parser.addOption(showOption);
+    parser.addOption(hideOption);
+    parser.addOption(toggleOption);
+
     parser.process(*this);
 
     const QStringList args = parser.positionalArguments();
-    if ( args.count() > 1)
-        qFatal("Invalid amount of arguments");
+    if ( args.count() > 0) {
+        qFatal(parser.helpText().toStdString().c_str());
+    }
+//        qFatal("Invalid amount of arguments");
 
-    if ( parser.isSet("config") ) {
-        settings_ = new QSettings(parser.value("c"));
+    if ( parser.isSet(configOption) ) {
+        settings_ = new QSettings(parser.value(configOption));
     } else {
         settings_ = new QSettings;
     }
 
-    if ( parser.isSet("hotkey") ) {
-        settings_->setValue("hotkey", parser.value("hotkey"));
+    if ( parser.isSet(hotkeyOption) ) {
+        settings_->setValue("hotkey", parser.value(hotkeyOption));
     }
 
 
@@ -114,8 +127,43 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     socket.connectToServer(applicationName());
     if ( socket.waitForConnected(500) ) {
         // If there is a command send it
-        if ( args.count() == 1 ){
-            socket.write(args.at(0).toLocal8Bit());
+        const char BIT_PATTERN_SHOW = 0x01;
+        const char BIT_PATTERN_HIDE = 0x02;
+        const char BIT_PATTERN_TOGGLE = 0x04;
+        const char BIT_PATTERN_HIDESHOW = BIT_PATTERN_HIDE | BIT_PATTERN_SHOW;
+        const char BIT_PATTERN_ALL = BIT_PATTERN_HIDESHOW | BIT_PATTERN_TOGGLE;
+
+        char cmdBitMask = 0;
+        if (parser.isSet(showOption))
+            cmdBitMask |= BIT_PATTERN_SHOW;
+        if (parser.isSet(hideOption))
+            cmdBitMask |= BIT_PATTERN_HIDE;
+        if (parser.isSet(toggleOption))
+            cmdBitMask |= BIT_PATTERN_TOGGLE;
+
+        QString cmdToSend;
+        std::bitset<8> cmdBitSet(cmdBitMask);
+        if (cmdBitSet.count() > 1 && cmdBitMask != BIT_PATTERN_HIDESHOW && cmdBitMask != BIT_PATTERN_ALL)
+            qFatal("Only one of -sit can be specified");
+        else if (cmdBitMask == BIT_PATTERN_HIDESHOW || cmdBitMask == BIT_PATTERN_ALL) // Accept it anyway if the user specified show and hide simultaneously or all 3 options, interpreting it as toggle
+            cmdToSend = "toggle";
+        else switch (cmdBitMask) {
+            case BIT_PATTERN_HIDE:
+                cmdToSend = "hide";
+                break;
+            case BIT_PATTERN_SHOW:
+                cmdToSend = "show";
+                break;
+            case BIT_PATTERN_TOGGLE:
+                cmdToSend = "toggle";
+                break;
+            default:
+                qFatal("I have no idea how this should even happen. Let's go with D-RAM bitflip!");
+                break;
+        }
+
+        if ( !cmdToSend.isEmpty() ){
+            socket.write(cmdToSend.toLocal8Bit());
             socket.flush();
             socket.waitForReadyRead(500);
             if (socket.bytesAvailable())
