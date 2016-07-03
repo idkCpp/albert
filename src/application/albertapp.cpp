@@ -97,7 +97,8 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     QCommandLineOption showOption = QCommandLineOption({"s", "show"}, "Brings the albert widget to front.");
     QCommandLineOption hideOption = QCommandLineOption({"i", "hide"}, "Hides the albert widget."); // "i" for invisible because "h" is already taken by the help option
     QCommandLineOption toggleOption = QCommandLineOption({"t", "toggle"}, "Brings the albert widget to front if its hidden, hides it otherwise.");
-    QString ipcOpts = "sitq";
+    QCommandLineOption reloadOption = QCommandLineOption({"r", "reload"}, "Reloads the configuration");
+    QString ipcOpts = "sitqr";
 
     parser.addOption(configOption);
     parser.addOption(hotkeyOption);
@@ -105,6 +106,7 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     parser.addOption(showOption);
     parser.addOption(hideOption);
     parser.addOption(toggleOption);
+    parser.addOption(reloadOption);
 
 
     /*
@@ -125,10 +127,10 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
     bool ipcHide = parser.isSet(hideOption);
     bool ipcToggle = parser.isSet(toggleOption);
     bool ipcQuit = parser.isSet(quitOption);
-    bool ipcReloadSettings = false;
+    bool ipcReloadSettings = parser.isSet(reloadOption);
 
     bool anySettingsOpt = settingsAlternateConfigFile | settingsChangeHotkey;
-    bool anyIpcOpt = ipcBringToFront | ipcHide | ipcQuit | ipcToggle;
+    bool anyIpcOpt = ipcBringToFront | ipcHide | ipcQuit | ipcToggle | ipcReloadSettings;
 
 
     /*
@@ -139,25 +141,23 @@ AlbertApp::AlbertApp(int &argc, char *argv[]) : QApplication(argc, argv) {
             (ipcHide && ipcToggle) ||
             (ipcBringToFront && ipcToggle) ) {
 
-        QString err("Please specify only one of -%1");
-        err = err.arg(ipcOpts);
-        std::string stderrstr = err.toStdString();
-        qWarning(stderrstr.c_str());
+        qWarning("Please specify only one of -sit");
 
         // Clear all because we don't know what the user wants
         ipcHide = false;
         ipcToggle = false;
         ipcBringToFront = false;
-        anyIpcOpt = ipcQuit;
+        anyIpcOpt = ipcQuit | ipcReloadSettings;
     }
 
-    if ((ipcHide || ipcBringToFront || ipcToggle) && ipcQuit) {
-        qWarning("Ignoring all of -sit");
+    if ((ipcHide || ipcBringToFront || ipcToggle || ipcReloadSettings) && ipcQuit) {
+        qWarning("Ignoring all of -sitr");
 
         // Clear all the show/hide/toggle opts because we want to --quit
         ipcHide = false;
         ipcToggle = false;
         ipcBringToFront = false;
+        ipcReloadSettings = false;
     }
 
 
