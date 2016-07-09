@@ -20,7 +20,6 @@
 #include <QCommandLineParser>
 #include <QDebug>
 #include <csignal>
-#include <bitset>
 #include "albertapp.h"
 #include "mainwindow.h"
 #include "settingswidget.h"
