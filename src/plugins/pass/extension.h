@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2016 Martin Bürgmann
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@
 #include <QObject>
 #include <QPointer>
 #include "iextension.h"
+#include <QMap>
+#include <QList>
+#include <QStandardItemModel>
 
 namespace Pass {
 
@@ -38,10 +41,7 @@ public:
      */
 
     QWidget *widget(QWidget *parent = nullptr) override;
-    void setupSession() override;
-    void teardownSession() override;
     void handleQuery(shared_ptr<Query> query) override;
-    void handleFallbackQuery(shared_ptr<Query>) override;
 
     /*
      * Extension specific members
@@ -49,5 +49,6 @@ public:
 
 private:
     QPointer<ConfigWidget> widget_;
+    QStandardItemModel *sim_;
 };
 }

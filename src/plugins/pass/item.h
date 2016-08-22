@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2016 Martin Bürgmann
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,12 +24,15 @@ namespace Pass {
 class Item final : public AlbertItem
 {
 public:
-    Item();
+    Item(QString title);
     ~Item();
 
     QString text() const override;
     QString subtext() const override;
     QString iconPath() const override;
     void activate(ExecutionFlags *) override;
+
+private:
+    QString title_;
 };
 }

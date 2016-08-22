@@ -1,5 +1,5 @@
 // albert - a simple application launcher for linux
-// Copyright (C) 2014-2015 Manuel Schneider
+// Copyright (C) 2016 Martin Bürgmann
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,32 +15,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "item.h"
-
+#include <QProcess>
 
 /** ***************************************************************************/
-Pass::Item::Item(){
-
+Pass::Item::Item(QString title) : title_(title){
 }
 
 
 
 /** ***************************************************************************/
 Pass::Item::~Item(){
-
 }
 
 
 
 /** ***************************************************************************/
 QString Pass::Item::text() const {
-    return "Title of item";
+    return title_;
 }
 
 
 
 /** ***************************************************************************/
 QString Pass::Item::subtext() const {
-    return "Info about the item";
+    return "Copy this password";
 }
 
 
@@ -55,5 +53,5 @@ QString Pass::Item::iconPath() const {
 
 /** ***************************************************************************/
 void Pass::Item::activate(ExecutionFlags *) {
-    // Do sth cool...
+    QProcess::startDetached("pass", {"-c", title_});
 }
