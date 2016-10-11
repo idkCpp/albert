@@ -18,10 +18,10 @@
 #include <QVariant>
 #include <vector>
 using std::vector;
-#include "abstractobjects.hpp"
+#include "abstractitem.h"
 
 namespace Remmina {
-class Item final : public AlbertItem
+class Item final : public AbstractItem
 {
 public:
     Item(QString configFilePath);
@@ -29,15 +29,18 @@ public:
 
     Item* copy();
 
+    QString id() const;
     QString getName() { return name_; }
 
     QString text() const override;
     QString subtext() const override;
     QString iconPath() const override;
-    void activate(ExecutionFlags *) override;
+    vector<shared_ptr<AbstractAction>> actions();
 
 private:
+    QString id_;
     QString configFile_;
     QString name_;
+    QString actionLabel_;
 };
 }

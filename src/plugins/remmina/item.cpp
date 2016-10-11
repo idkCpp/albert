@@ -17,6 +17,7 @@
 #include "item.h"
 #include <QSettings>
 #include <QProcess>
+#include "standardobjects.h"
 
 
 /** ***************************************************************************/
@@ -25,6 +26,10 @@ Remmina::Item::Item(QString configFilePath){
     QSettings set(configFilePath, QSettings::IniFormat);
     set.beginGroup("remmina");
     name_ = set.value("name").toString();
+    id_ = "item:remmina:%1";
+    id_ = id_.arg(name_);
+    actionLabel_ = "Connect to %1";
+    actionLabel_ = actionLabel_.arg(name_);
 }
 
 
@@ -37,9 +42,15 @@ Remmina::Item::~Item(){
 
 
 /** ***************************************************************************/
-Remmina::Item *Remmina::Item::copy()
-{
+Remmina::Item *Remmina::Item::copy() {
     return new Item(configFile_);
+}
+
+
+
+/** ***************************************************************************/
+QString Remmina::Item::id() const {
+    return id_;
 }
 
 
@@ -53,7 +64,7 @@ QString Remmina::Item::text() const {
 
 /** ***************************************************************************/
 QString Remmina::Item::subtext() const {
-    return "Connect with remmina";
+    return actionLabel_;
 }
 
 
@@ -67,8 +78,12 @@ QString Remmina::Item::iconPath() const {
 
 
 /** ***************************************************************************/
-void Remmina::Item::activate(ExecutionFlags *) {
-    // Do sth cool...
-    //qDebug("Connecting to %s", name_.toStdString().c_str());
-    QProcess::startDetached("remmina", {"-c", configFile_});
+vector<shared_ptr<AbstractAction>> Remmina::Item::actions() {
+    vector<shared_ptr<AbstractAction>> ret;
+
+    ret.push_back(shared_ptr<AbstractAction>(new StandardAction(actionLabel_, [this](ExecutionFlags*){
+        QProcess::startDetached("remmina", {"-c", configFile_});
+    })));
+
+    return ret;
 }

@@ -17,17 +17,17 @@
 #pragma once
 #include <QObject>
 #include <QPointer>
-#include "iextension.h"
+#include "abstractextension.h"
 #include "item.h"
 
 namespace Remmina {
 
 class ConfigWidget;
 
-class Extension final : public QObject, public IExtension
+class Extension final : public AbstractExtension
 {
     Q_OBJECT
-    Q_INTERFACES(IExtension)
+    Q_INTERFACES(AbstractExtension)
     Q_PLUGIN_METADATA(IID ALBERT_EXTENSION_IID FILE "metadata.json")
 
 public:
@@ -38,9 +38,10 @@ public:
      * Implementation of extension interface
      */
 
+    QString name() const { return name_; }
     QWidget *widget(QWidget *parent = nullptr) override;
     void setupSession() override;
-    void handleQuery(shared_ptr<Query> query) override;
+    void handleQuery(Query query) override;
     QStringList triggers() const override { return { "remmina" }; }
     bool runExclusive() const override { return true; }
 
@@ -52,5 +53,6 @@ private:
     QPointer<ConfigWidget> widget_;
     QList<Item*> availableItems_;
     bool error_;
+    const char* name_ = "Remmina";
 };
 }
