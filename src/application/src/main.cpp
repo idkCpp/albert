@@ -28,8 +28,6 @@
 #include <QStandardPaths>
 #include <QtNetwork/QLocalServer>
 #include <QtNetwork/QLocalSocket>
-#include <QMutex>
-#include <QMutexLocker>
 #include <csignal>
 #include "mainwindow.h"
 #include "hotkeymanager.h"
@@ -37,60 +35,7 @@
 #include "querymanager.h"
 #include "settingswidget.h"
 #include "trayicon.h"
-#include "xdgiconlookup.h"
-using Core::ExtensionManager;
-
-//static constexpr std::size_t extra = sizeof(std::size_t) +1;
-static std::size_t allocatedPayload = 0;
-static std::size_t allocatedOverhead = 0;
-typedef struct {
-    char magic;
-    std::size_t len;
-} housekeeping_t;
-typedef struct {
-    std::size_t payloadSize;
-    std::size_t overheadSize;
-    float overheadRatio;
-} memstat_t;
-static constexpr std::size_t extra = sizeof(housekeeping_t);
-static QMutex newtex;
-
-void* operator new (std::size_t sz) { //throw(std::bad_alloc) {
-    QMutexLocker _(&newtex);
-    char* sp = (char*) malloc(sz + extra);
-
-    allocatedPayload += sz;
-    allocatedOverhead += extra;
-
-    housekeeping_t *hk = (housekeeping_t*)sp;
-    hk->magic = 0x55;
-    hk->len = sz;
-
-    return sp + extra;
-}
-void operator delete(void* p) throw() {
-    if (p == nullptr)
-        return;
-    QMutexLocker _(&newtex);
-    char* sp = (char*)p - extra;
-    housekeeping_t *hk = (housekeeping_t*) sp;
-
-    if (hk->magic == 0x55) {
-        allocatedPayload -= hk->len;
-        allocatedOverhead -= extra;
-    }
-
-    free(sp);
-}
-
-memstat_t allocatedMemory() {
-    QMutexLocker _(&newtex);
-    memstat_t ret;
-    ret.overheadSize = allocatedOverhead;
-    ret.payloadSize = allocatedPayload;
-    ret.overheadRatio = (float)allocatedOverhead / (allocatedOverhead+allocatedPayload);
-    return ret;
-}
+#include "trackbert.h"
 
 
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &message);
@@ -427,7 +372,8 @@ int main(int argc, char **argv) {
     memstat_t mem = allocatedMemory();
 qDebug("Entering event loop! Current memory %f MiB + %.02f %% overhead", (float)mem.payloadSize / 1024 / 1024, mem.overheadRatio * 100);
     int retval = app->exec();
-qDebug("Exited event loop! Current memory %f MiB", (float)allocatedPayload / 1024 / 1024);
+    mem = allocatedMemory();
+qDebug("Exited event loop! Current memory %f MiB + %.02f %% overhead", (float)mem.payloadSize / 1024 / 1024, mem.overheadRatio * 100);
 
 
     /*
