@@ -11,6 +11,10 @@ find_package(Qt5 5.2.0 REQUIRED COMPONENTS
     Widgets
 )
 
+include_directories(
+    ../../application/src
+)
+
 # List files in the source directory
 FILE(GLOB_RECURSE SRC include/* src/*)
 
