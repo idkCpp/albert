@@ -38,6 +38,42 @@
 #include "xdgiconlookup.h"
 using Core::ExtensionManager;
 
+//static constexpr std::size_t extra = sizeof(std::size_t) +1;
+static std::size_t allocatedPayload = 0;
+static std::size_t allocatedOverhead = 0;
+typedef struct {
+    char magic;
+    std::size_t len;
+} housekeeping_t;
+static constexpr std::size_t extra = sizeof(housekeeping_t);
+
+void* operator new (std::size_t sz) { //throw(std::bad_alloc) {
+    char* sp = (char*) malloc(sz + extra);
+
+    allocatedPayload += sz;
+    allocatedOverhead += extra;
+
+    housekeeping_t *hk = (housekeeping_t*)sp;
+    hk->magic = 0x55;
+    hk->len = sz;
+
+    return sp + extra;
+}
+void operator delete(void* p) throw() {
+    if (p == nullptr)
+        return;
+    char* sp = (char*)p - extra;
+    housekeeping_t *hk = (housekeeping_t*) sp;
+
+    if (hk->magic == 0x55) {
+        allocatedPayload -= hk->len;
+        allocatedOverhead -= extra;
+    }
+
+    free(sp);
+}
+
+
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &message);
 void shutdownHandler(int);
 void dispatchMessage();
@@ -369,8 +405,9 @@ int main(int argc, char **argv) {
     /*
      * ENTER EVENTLOOP
      */
-
+qDebug("Entering event loop! Current memory %f MiB", (float)allocatedPayload / 1024 / 1024);
     int retval = app->exec();
+qDebug("Exited event loop! Current memory %f MiB", (float)allocatedPayload / 1024 / 1024);
 
 
     /*
