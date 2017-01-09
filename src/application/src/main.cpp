@@ -28,6 +28,8 @@
 #include <QStandardPaths>
 #include <QtNetwork/QLocalServer>
 #include <QtNetwork/QLocalSocket>
+#include <QMutex>
+#include <QMutexLocker>
 #include <csignal>
 #include "mainwindow.h"
 #include "hotkeymanager.h"
@@ -45,9 +47,16 @@ typedef struct {
     char magic;
     std::size_t len;
 } housekeeping_t;
+typedef struct {
+    std::size_t payloadSize;
+    std::size_t overheadSize;
+    float overheadRatio;
+} memstat_t;
 static constexpr std::size_t extra = sizeof(housekeeping_t);
+static QMutex newtex;
 
 void* operator new (std::size_t sz) { //throw(std::bad_alloc) {
+    QMutexLocker _(&newtex);
     char* sp = (char*) malloc(sz + extra);
 
     allocatedPayload += sz;
@@ -62,6 +71,7 @@ void* operator new (std::size_t sz) { //throw(std::bad_alloc) {
 void operator delete(void* p) throw() {
     if (p == nullptr)
         return;
+    QMutexLocker _(&newtex);
     char* sp = (char*)p - extra;
     housekeeping_t *hk = (housekeeping_t*) sp;
 
@@ -71,6 +81,15 @@ void operator delete(void* p) throw() {
     }
 
     free(sp);
+}
+
+memstat_t allocatedMemory() {
+    QMutexLocker _(&newtex);
+    memstat_t ret;
+    ret.overheadSize = allocatedOverhead;
+    ret.payloadSize = allocatedPayload;
+    ret.overheadRatio = (float)allocatedOverhead / (allocatedOverhead+allocatedPayload);
+    return ret;
 }
 
 
@@ -405,7 +424,8 @@ int main(int argc, char **argv) {
     /*
      * ENTER EVENTLOOP
      */
-qDebug("Entering event loop! Current memory %f MiB", (float)allocatedPayload / 1024 / 1024);
+    memstat_t mem = allocatedMemory();
+qDebug("Entering event loop! Current memory %f MiB + %.02f %% overhead", (float)mem.payloadSize / 1024 / 1024, mem.overheadRatio * 100);
     int retval = app->exec();
 qDebug("Exited event loop! Current memory %f MiB", (float)allocatedPayload / 1024 / 1024);
 
