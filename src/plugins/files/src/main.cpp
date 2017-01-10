@@ -195,7 +195,7 @@ vector<shared_ptr<Files::File>> Files::FilesPrivate::indexFiles() const {
                     ||(indexImage && mimeName.startsWith("image"))
                     ||(indexDocs &&
                        (mimeName.startsWith("application") || mimeName.startsWith("text")))) {
-                newIndex.push_back(std::make_shared<File>(canonicalPath, mimetype));
+                newIndex.push_back(std::make_shared<File>(canonicalPath)); //, mimetype));
             }
         } else if (fileInfo.isDir()) {
 
@@ -211,7 +211,7 @@ vector<shared_ptr<Files::File>> Files::FilesPrivate::indexFiles() const {
             // If the dir matches the index options, index it
             if (indexDirs) {
                 QMimeType mimetype = mimeDatabase.mimeTypeForFile(canonicalPath);
-                newIndex.push_back(std::make_shared<File>(canonicalPath, mimetype));
+                newIndex.push_back(std::make_shared<File>(canonicalPath)); //, mimetype));
             }
 
             // Ignore ignorefile by default
@@ -262,7 +262,7 @@ vector<shared_ptr<Files::File>> Files::FilesPrivate::indexFiles() const {
         qDebug() << qPrintable(QString("[%1] Serializing to %2").arg(q->Core::Extension::id, file.fileName()));
         QTextStream out(&file);
         for (const shared_ptr<File> &item : newIndex)
-            out << item->path() << endl << item->mimetype().name() << endl;
+            out << item->path() << endl;// << item->mimetype().name() << endl;
     } else
         qWarning() << qPrintable(QString("[%1] Could not write file %2: %3").arg(q->Core::Extension::id, file.fileName(), file.errorString()));
 
@@ -305,7 +305,7 @@ Files::Extension::Extension()
             QTextStream in(&file);
             QMimeDatabase mimedatabase;
             while (!in.atEnd())
-                d->index.emplace_back(new File(in.readLine(), mimedatabase.mimeTypeForName(in.readLine())));
+                d->index.emplace_back(new File(in.readLine())); //, mimedatabase.mimeTypeForName(in.readLine())));
             file.close();
 
             // Build the offline index
