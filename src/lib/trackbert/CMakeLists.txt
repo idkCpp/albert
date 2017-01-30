@@ -1,26 +1,17 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.11)
 
-project(albertcore)
+project(trackbert)
 
 add_definitions(-DCORE) #export branch
 
-# Get Qt libraries
-find_package(Qt5 5.2.0 REQUIRED COMPONENTS
-    Concurrent
-    Sql
-    Widgets
-)
-
-include_directories(
-    ../../application/src
-)
+find_package(Qt5 5.2.0 REQUIRED COMPONENTS Core)
 
 # List files in the source directory
 FILE(GLOB_RECURSE SRC include/* src/*)
 
 # Do not export symbols by default
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+#set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+#set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 # Define the target
 add_library(${PROJECT_NAME} SHARED ${SRC} ${UI})
@@ -31,14 +22,9 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE src/
 )
 
-# Link target to libraries
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        ${Qt5Concurrent_LIBRARIES}
-        ${Qt5Sql_LIBRARIES}
-        ${Qt5Widgets_LIBRARIES}
-        xdg
-        trackbert
+        ${Qt5Core_LIBRARIES}
 )
 
 # Install target

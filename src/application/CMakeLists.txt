@@ -30,6 +30,7 @@ target_link_libraries(${PROJECT_NAME}
     ${Qt5Svg_LIBRARIES}
     ${Qt5Widgets_LIBRARIES}
     albertcore
+    trackbert
     globalshortcut
     xdg
 )

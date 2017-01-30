@@ -35,7 +35,9 @@
 #include "querymanager.h"
 #include "settingswidget.h"
 #include "trayicon.h"
+#include "xdgiconlookup.h"
 #include "trackbert.h"
+using Core::ExtensionManager;
 
 
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &message);
