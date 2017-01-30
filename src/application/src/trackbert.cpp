@@ -22,14 +22,23 @@ using std::size_t;
 typedef struct {
     char magic;
     size_t len;
+//    tracker_t* tracker;
 } housekeeping_t;
+
+typedef struct {
+    void* base;
+    housekeeping_t* hk;
+    void* payptr;
+    size_t payload;
+    size_t overhead;
+} allocation_t;
 
 static constexpr size_t extra = sizeof(housekeeping_t);
 static QMutex newtex;
 static size_t allocatedPayload = 0;
 static size_t allocatedOverhead = 0;
 
-void* operator new (size_t sz) { //throw(std::bad_alloc) {
+static allocation_t allocate(size_t sz) {
     QMutexLocker _(&newtex);
     char* sp = (char*) malloc(sz + extra);
 
@@ -39,9 +48,31 @@ void* operator new (size_t sz) { //throw(std::bad_alloc) {
     housekeeping_t *hk = (housekeeping_t*)sp;
     hk->magic = 0x55;
     hk->len = sz;
+//    hk->tracker = nullptr;
 
-    return sp + extra;
+    allocation_t ret;
+    ret.base = sp;
+    ret.hk = hk;
+    ret.payptr = sp + extra;
+    ret.overhead = extra;
+    ret.payload = sz;
+
+    return ret;
 }
+
+void* operator new (size_t sz) { //throw(std::bad_alloc) {
+    allocation_t alloc = allocate(sz);
+    return alloc.payptr;
+}
+
+void* operator new (size_t sz, tracker_t& tracker) {
+    allocation_t alloc = allocate(sz);
+    tracker.allocated += alloc.payload;
+//    alloc.hk->tracker = &tracker;
+    return alloc.payptr;
+}
+
+
 void operator delete(void* p) throw() {
     if (p == nullptr)
         return;
@@ -52,6 +83,10 @@ void operator delete(void* p) throw() {
     if (hk->magic == 0x55) {
         allocatedPayload -= hk->len;
         allocatedOverhead -= extra;
+/*
+        if (hk->tracker != nullptr) {
+            hk->tracker->allocated -= hk->len;
+        }*/
     }
 
     free(sp);

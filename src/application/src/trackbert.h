@@ -24,4 +24,9 @@ typedef struct {
     float overheadRatio;
 } memstat_t;
 
+typedef struct {
+    std::size_t allocated = 0;
+} tracker_t;
+
 memstat_t allocatedMemory();
+void* operator new (size_t, tracker_t&);
