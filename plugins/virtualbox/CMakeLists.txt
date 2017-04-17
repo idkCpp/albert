@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 
 PROJECT(virtualbox)
 
-FILE(GLOB_RECURSE SRC src/* metadata.json)
+FILE(GLOB_RECURSE SRC src/* sdk/bindings/xpcom/include/* metadata.json)
 
 find_package(Qt5 5.2.0 REQUIRED COMPONENTS
     Widgets
@@ -11,6 +11,10 @@ find_package(Qt5 5.2.0 REQUIRED COMPONENTS
 
 qt5_add_resources(QRC
     ${PROJECT_NAME}.qrc
+)
+
+include_directories(
+    sdk/bindings/xpcom/include
 )
 
 # Define the target
