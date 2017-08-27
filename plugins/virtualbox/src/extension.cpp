@@ -148,7 +148,7 @@ VirtualBox::Extension::Extension()
      */
     if (sizeof(PRUnichar) != sizeof(wchar_t))
     {
-        throw new QString("Error compiler size mismatch!");
+        throw new QString("Error: compiler size mismatch!");
         /*
         printf("Error: sizeof(PRUnichar) {%lu} != sizeof(wchar_t) {%lu}!\n"
                "Probably, you forgot the -fshort-wchar compiler option.\n",
