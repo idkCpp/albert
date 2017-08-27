@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 
 PROJECT(virtualbox)
 
-FILE(GLOB_RECURSE SRC src/* sdk/bindings/xpcom/include/* metadata.json)
+FILE(GLOB_RECURSE SRC src/* metadata.json)
 
 find_package(Qt5 5.2.0 REQUIRED COMPONENTS
     Widgets
@@ -13,8 +13,16 @@ qt5_add_resources(QRC
     ${PROJECT_NAME}.qrc
 )
 
+add_definitions(-DRT_OS_LINUX)
+
 include_directories(
-    sdk/bindings/xpcom/include
+    src/sdk/
+    src/sdk/idl
+    src/sdk/include
+    src/sdk/include/ipcd
+    src/sdk/include/nsprpub
+    src/sdk/include/string
+    src/sdk/include/xpcom
 )
 
 # Define the target
@@ -29,6 +37,7 @@ target_link_libraries(${PROJECT_NAME}
     ${Qt5Xml_LIBRARIES}
     albertcore
     xdg
+    ${CMAKE_SOURCE_DIR}/plugins/virtualbox/src/sdk/VBoxXPCOM.so
 )
 
 # Install target

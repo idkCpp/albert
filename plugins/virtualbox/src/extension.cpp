@@ -36,6 +36,16 @@ using Core::Action;
 using Core::StandardAction;
 using Core::StandardItem;
 
+#define RT_OS_LINUX 1
+
+#include "nsMemory.h"
+#include "nsString.h"
+#include "nsIServiceManager.h"
+#include "nsEventQueueUtils.h"
+
+#include "nsIExceptionService.h"
+
+#include "VirtualBox_XPCOM.h"
 
 
 class VirtualBox::Private
@@ -46,6 +56,12 @@ public:
     QFileSystemWatcher vboxWatcher;
 
     void rescanVBoxConfig(QString path);
+
+    // SDK stuff
+    nsCOMPtr<nsIServiceManager> serviceManager;
+    nsCOMPtr<nsIEventQueue> eventQ;
+    nsCOMPtr<nsIComponentManager> manager;
+    nsCOMPtr<IVirtualBox> virtualBox;
 
 };
 
@@ -123,6 +139,79 @@ VirtualBox::Extension::Extension()
       Core::QueryHandler(Core::Extension::id),
       d(new Private) {
 
+    /*
+     * Check that PRUnichar is equal in size to what compiler composes L""
+     * strings from; otherwise NS_LITERAL_STRING macros won't work correctly
+     * and we will get a meaningless SIGSEGV. This, of course, must be checked
+     * at compile time in xpcom/string/nsTDependentString.h, but XPCOM lacks
+     * compile-time assert macros and I'm not going to add them now.
+     */
+    if (sizeof(PRUnichar) != sizeof(wchar_t))
+    {
+        throw new QString("Error compiler size mismatch!");
+        /*
+        printf("Error: sizeof(PRUnichar) {%lu} != sizeof(wchar_t) {%lu}!\n"
+               "Probably, you forgot the -fshort-wchar compiler option.\n",
+               (unsigned long) sizeof(PRUnichar),
+               (unsigned long) sizeof(wchar_t));
+        return -1;*/
+    }
+
+    nsresult rc;
+
+    /*
+     * This is the standard XPCOM init procedure.
+     * What we do is just follow the required steps to get an instance
+     * of our main interface, which is IVirtualBox.
+     *
+     * Note that we scope all nsCOMPtr variables in order to have all XPCOM
+     * objects automatically released before we call NS_ShutdownXPCOM at the
+     * end. This is an XPCOM requirement.
+     */
+    rc = NS_InitXPCOM2(getter_AddRefs(d->serviceManager), nsnull, nsnull);
+    if (NS_FAILED(rc))
+    {
+        throw QString("Error: XPCOM could not be initialized! rc=%1\n").arg(rc);
+    }
+
+    /*
+     * Make sure the main event queue is created. This event queue is
+     * responsible for dispatching incoming XPCOM IPC messages. The main
+     * thread should run this event queue's loop during lengthy non-XPCOM
+     * operations to ensure messages from the VirtualBox server and other
+     * XPCOM IPC clients are processed. This use case doesn't perform such
+     * operations so it doesn't run the event loop.
+     */
+    rc = NS_GetMainEventQ(getter_AddRefs(d->eventQ));
+    if (NS_FAILED(rc))
+    {
+        throw QString("Error: could not get main event queue! rc=%1\n").arg(rc);
+    }
+
+    /*
+     * Now XPCOM is ready and we can start to do real work.
+     * IVirtualBox is the root interface of VirtualBox and will be
+     * retrieved from the XPCOM component manager. We use the
+     * XPCOM provided smart pointer nsCOMPtr for all objects because
+     * that's very convenient and removes the need deal with reference
+     * counting and freeing.
+     */
+    rc = NS_GetComponentManager(getter_AddRefs(d->manager));
+    if (NS_FAILED(rc))
+    {
+        throw QString("Error: could not get component manager! rc=%1\n").arg(rc);
+    }
+
+    rc = d->manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
+                                             nsnull,
+                                             NS_GET_IID(IVirtualBox),
+                                             getter_AddRefs(d->virtualBox));
+    if (NS_FAILED(rc))
+    {
+        throw QString("Error, could not instantiate VirtualBox object! rc=%1\n").arg(rc);
+    }
+    printf("VirtualBox object created\n");
+
     VMItem::iconPath_ = XDG::IconLookup::iconPath("virtualbox");
     if ( VMItem::iconPath_.isNull() )
         VMItem::iconPath_ = ":vbox";
@@ -141,7 +230,10 @@ VirtualBox::Extension::Extension()
 
 /** ***************************************************************************/
 VirtualBox::Extension::~Extension() {
-
+    /*
+     * Perform the standard XPCOM shutdown procedure.
+     */
+    NS_ShutdownXPCOM(nsnull);
 }
 
 
